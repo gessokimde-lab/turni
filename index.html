@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#6366f1">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Turni & Indennità</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+--S:#c084fc;--P:#60a5fa;--M:#fbbf24;--N:#818cf8;--R:#4ade80;
+--bg:#0d0d12;--sf:#171720;--sf2:#1f1f2a;--bd:#2a2a3a;
+--tx:#eeeef5;--tx2:#7777a0;--acc:#6366f1;
+--red:#f87171;--grn:#4ade80;--yel:#fbbf24;
+--r:13px;--r2:9px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;max-width:430px;margin:0 auto;padding-bottom:84px;overflow-x:hidden}
+/* HDR */
+.hdr{padding:52px 18px 12px;display:flex;align-items:center;justify-content:space-between}
+.hdr h1{font-size:23px;font-weight:700}
+.mnav{display:flex;gap:6px;align-items:center}
+.mbtn{background:var(--sf);border:1px solid var(--bd);color:var(--tx);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.mlbl{font-size:14px;font-weight:600;min-width:114px;text-align:center}
+/* PAGES */
+.pg{display:none}.pg.on{display:block}
+/* ── CALENDAR ─────────────────────────────── */
+.wdays{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px 2px}
+.wday{text-align:center;font-size:10px;color:var(--tx2);font-weight:700;text-transform:uppercase;padding:3px 0}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0 10px}
+.cgrid.selecting{touch-action:none}
+.cc{aspect-ratio:1;background:var(--sf);border:1px solid var(--bd);border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:3px;position:relative;overflow:hidden;transition:background .12s;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+.cc:active{background:var(--sf2)}
+.cc.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+.cc.today{border-color:var(--acc)}
+.cc.hasentry::after{content:'';position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;background:var(--acc)}
+.cc.sel{outline:2px solid var(--acc);background:rgba(99,102,241,.28)!important}
+.cnum{font-size:10px;font-weight:700;color:var(--tx2);align-self:flex-start;line-height:1.1}
+.cc.today .cnum{color:var(--acc)}
+.cmsh{font-size:14px;font-weight:800;margin-top:1px}
+.leaveiconcell{font-size:15px;margin-top:1px}
+.cgbadge{position:absolute;top:1px;right:1px;font-size:6px;font-weight:700;background:rgba(251,191,36,.2);color:var(--yel);border-radius:3px;padding:1px 2px;line-height:1.1}
+.leg{display:flex;flex-wrap:wrap;gap:7px;padding:10px 10px 6px}
+.legit{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tx2)}
+.legdot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+/* ── MODALS ─────────────────────────────────── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.ov.on{display:flex}
+.mdl{background:var(--sf);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:20px;max-height:90vh;overflow-y:auto;animation:sup .22s ease;position:relative}
+@keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mclose{position:absolute;top:14px;right:14px;background:var(--sf2);border:none;color:var(--tx2);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.mdtag{font-size:12px;color:var(--tx2);margin-bottom:3px}
+.mdtit{font-size:19px;font-weight:700;margin-bottom:14px}
+.spills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.spill{display:flex;align-items:center;gap:5px;background:var(--sf2);border-radius:18px;padding:5px 10px;font-size:12px;border:1px solid var(--bd)}
+.spill.me{border-color:var(--acc)}
+.spdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cgpill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:18px;font-size:12px;font-weight:600;margin-bottom:13px}
+.cgpill.cg{background:rgba(251,191,36,.1);color:var(--yel);border:1px solid rgba(251,191,36,.3)}
+.cgpill.f{background:rgba(96,165,250,.08);color:var(--P);border:1px solid rgba(96,165,250,.25)}
+.daysum{background:linear-gradient(135deg,#1f1f2e,#171720);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
+.daysumtop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.daysumlbl{font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.daysumtot{font-size:22px;font-weight:700;color:var(--grn)}
+.daysumtot.zero{color:var(--tx2)}
+.daysumlist{display:flex;flex-direction:column;gap:5px}
+.daysumrow{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.daysumrow .n{color:var(--tx)}
+.daysumrow .v{color:var(--tx2);font-weight:600}
+.daysumempty{font-size:12px;color:var(--tx2);font-style:italic}
+.ferrow{margin-bottom:13px}
+.fersel{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r2);color:var(--tx);font-size:13px;padding:9px 10px;outline:none}
+.sectlbl{font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:8px}
+.jtxt{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r2);color:var(--tx);font-size:14px;padding:11px 12px;resize:none;min-height:96px;outline:none;font-family:inherit;line-height:1.5}
+.jtxt:focus{border-color:var(--acc)}
+.jhint{font-size:11px;color:var(--tx2);margin-top:5px;line-height:1.4}
+.aprev{margin-top:11px}
+.achips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.achip{border-radius:18px;padding:4px 9px;font-size:11px;display:flex;align-items:center;gap:4px}
+.achip.auto{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:var(--grn)}
+.achip.kw{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc}
+.achip.none{background:var(--sf2);border:1px solid var(--bd);color:var(--tx2);font-style:italic}
+.amed{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.amed-row{display:flex;align-items:center;gap:8px;background:var(--sf2);border-radius:var(--r2);padding:8px 10px;border:1px solid var(--bd)}
+.amed-name{flex:1;font-size:13px}
+.amed-qty{width:58px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:13px;padding:4px 6px;text-align:center;outline:none}
+.amed-qty:focus{border-color:var(--acc)}
+.amed-unit{font-size:11px;color:var(--tx2);width:28px}
+.bsave{width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#6366f1,#7c3aed);border:none;border-radius:var(--r2);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.bsave:active{opacity:.85}
+.bdel{width:100%;margin-top:7px;padding:10px;background:transparent;border:1px solid rgba(248,113,113,.3);border-radius:var(--r2);color:var(--red);font-size:13px;cursor:pointer}
+/* ── DIARIO ─────────────────────────────────── */
+.dlist{padding:0 18px}
+.ditem{background:var(--sf);border-radius:var(--r);padding:13px 15px;margin-bottom:10px;border:1px solid var(--bd);cursor:pointer}
+.ditem:active{background:var(--sf2)}
+.ditop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.didate{font-size:12px;color:var(--tx2)}
+.distxt{font-size:13px;line-height:1.4;margin-bottom:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dichips{display:flex;flex-wrap:wrap;gap:4px}
+.dichip{font-size:10px;padding:2px 7px;border-radius:18px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);color:#a5b4fc}
+/* ── INDENNITÀ ──────────────────────────────── */
+.icont{padding:0 18px}
+.itcard{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;text-align:center}
+.itlbl{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:4px}
+.itval{font-size:34px;font-weight:700}
+.iitem{background:var(--sf);border-radius:var(--r2);padding:13px 15px;margin-bottom:9px;border:1px solid var(--bd);display:flex;align-items:center;gap:11px}
+.iiico{font-size:22px;flex-shrink:0}
+.iinfo{flex:1}
+.iiname{font-weight:600;font-size:14px;margin-bottom:1px}
+.iicnt{font-size:11px;color:var(--tx2)}
+.iiamt{font-size:17px;font-weight:700}
+.iiamt.pos{color:var(--grn)}.iiamt.zero{color:var(--tx2)}
+.bexp{width:100%;padding:12px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r2);color:var(--tx);font-size:13px;font-weight:600;cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px}
+.bexp:active{background:var(--sf2)}
+/* ── FERIE ──────────────────────────────────── */
+.fcont{padding:0 18px 24px}
+.ferremain{font-weight:700}
+/* ── SETTINGS ───────────────────────────────── */
+.scont{padding:0 18px 24px}
+.ssect{font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin:18px 0 8px}
+.scard{background:var(--sf);border-radius:var(--r);padding:14px;border:1px solid var(--bd);margin-bottom:10px}
+.slbl{font-size:11px;color:var(--tx2);margin-bottom:5px;display:block}
+.sinp{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r2);color:var(--tx);font-size:14px;padding:8px 10px;outline:none}
+.sinp:focus{border-color:var(--acc)}
+.srow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.colrow{background:var(--sf);border-radius:var(--r2);padding:10px 12px;border:1px solid var(--bd);margin-bottom:7px;display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px}
+.colnum{width:22px;height:22px;background:var(--sf2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--tx2)}
+.ssel{background:var(--sf2);border:1px solid var(--bd);border-radius:7px;color:var(--tx);font-size:13px;padding:5px 6px;outline:none}
+.acfg{background:var(--sf);border-radius:var(--r);padding:13px;border:1px solid var(--bd);margin-bottom:10px}
+.acfgtop{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.acfgname{font-weight:600;flex:1;font-size:14px}
+.acfggrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.acfglbl{font-size:10px;color:var(--tx2);margin-bottom:3px}
+.bssave{width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#7c3aed);border:none;border-radius:var(--r2);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px}
+/* ── NAV ────────────────────────────────────── */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--sf);border-top:1px solid var(--bd);display:flex;padding:8px 0 22px;z-index:100}
+.ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px;color:var(--tx2);background:none;border:none;transition:color .13s}
+.ntab.on{color:var(--acc)}
+.ntico{font-size:19px}
+.ntlbl{font-size:9px;font-weight:700}
+.fab{position:fixed;bottom:80px;right:18px;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#7c3aed);border:none;color:#fff;font-size:25px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 14px rgba(99,102,241,.45);z-index:101}
+.fab:active{transform:scale(.94)}
+/* ── LEAVE PICKER SHEET ─────────────────────── */
+.lvopt{width:100%;display:flex;align-items:center;gap:10px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r2);padding:12px;margin-bottom:8px;cursor:pointer;color:var(--tx);font-size:14px;text-align:left}
+.lvopt:active{background:var(--sf)}
+.lvico{font-size:20px}
+.lvname{flex:1;font-weight:600}
+.lvrem{font-size:11px;color:var(--tx2)}
+/* MISC */
+.empty{text-align:center;padding:44px 22px;color:var(--tx2)}
+.emico{font-size:40px;margin-bottom:10px}
+.emtxt{font-size:13px;line-height:1.5}
+.banner{margin:0 18px 12px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);border-radius:var(--r2);padding:10px 12px;font-size:12px;color:var(--yel);cursor:pointer;display:flex;align-items:center;gap:7px}
+select option{background:#1a1a22}
+</style>
+</head>
+<body>
+<div id="update-banner" onclick="applyUpdate()" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:150;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;padding:12px 16px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3)">
+🔄 Nuova versione disponibile — tocca per aggiornare
+</div>
+<!-- ══ CALENDARIO ══ -->
+<div class="pg on" id="pg-cal">
+<div class="hdr">
+<h1>📅 Turni</h1>
+<div class="mnav">
+<button class="mbtn" onclick="chMonth(-1)">‹</button>
+<span class="mlbl" id="cal-lbl"></span>
+<button class="mbtn" onclick="chMonth(1)">›</button>
+</div>
+</div>
+<div id="setup-banner" class="banner" onclick="goPage('set',document.getElementById('nt-set'))" style="display:none">
+⚠️ Configura la tua turnazione nelle Impostazioni
+</div>
+<div class="wdays" id="wdays"></div>
+<div class="cgrid" id="cgrid"></div>
+<div class="leg" id="leg"></div>
+</div>
+<!-- ══ DIARIO ══ -->
+<div class="pg" id="pg-dir">
+<div class="hdr">
+<h1>📝 Diario</h1>
+<div class="mnav">
+<button class="mbtn" onclick="chMonth(-1)">‹</button>
+<span class="mlbl" id="dir-lbl"></span>
+<button class="mbtn" onclick="chMonth(1)">›</button>
+</div>
+</div>
+<div class="dlist" id="dlist"></div>
+</div>
+<button class="fab" id="fab-dir" onclick="openDay(todayStr())" style="display:none" title="Nota di oggi">+</button>
+<!-- ══ INDENNITÀ ══ -->
+<div class="pg" id="pg-ind">
+<div class="hdr">
+<h1>💰 Indennità</h1>
+<div class="mnav">
+<button class="mbtn" onclick="chMonth(-1)">‹</button>
+<span class="mlbl" id="ind-lbl"></span>
+<button class="mbtn" onclick="chMonth(1)">›</button>
+</div>
+</div>
+<div class="icont" id="icont"></div>
+</div>
+<!-- ══ FERIE ══ -->
+<div class="pg" id="pg-fer">
+<div class="hdr">
+<h1>🏖️ Ferie</h1>
+<div class="mnav">
+<button class="mbtn" onclick="chFerYear(-1)">‹</button>
+<span class="mlbl" id="fer-lbl"></span>
+<button class="mbtn" onclick="chFerYear(1)">›</button>
+</div>
+</div>
+<div class="fcont" id="fcont"></div>
+</div>
+<!-- ══ IMPOSTAZIONI ══ -->
+<div class="pg" id="pg-set">
+<div class="hdr" style="padding-bottom:4px"><h1>⚙️ Impostazioni</h1></div>
+<div class="scont" id="scont"></div>
+</div>
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bnav">
+<button class="ntab on" onclick="goPage('cal',this)" id="nt-cal"><span class="ntico">📅</span><span class="ntlbl">Turni</span></button>
+<button class="ntab" onclick="goPage('dir',this)" id="nt-dir"><span class="ntico">📝</span><span class="ntlbl">Diario</span></button>
+<button class="ntab" onclick="goPage('ind',this)" id="nt-ind"><span class="ntico">💰</span><span class="ntlbl">Indennità</span></button>
+<button class="ntab" onclick="goPage('fer',this)" id="nt-fer"><span class="ntico">🏖️</span><span class="ntlbl">Ferie</span></button>
+<button class="ntab" onclick="goPage('set',this)" id="nt-set"><span class="ntico">⚙️</span><span class="ntlbl">Impostazioni</span></button>
+</nav>
+<!-- ══ MODAL: GIORNO ══ -->
+<div class="ov" id="ov-day" onclick="ovOut(event,'ov-day')">
+<div class="mdl">
+<button class="mclose" onclick="closeOv('ov-day')">×</button>
+<div class="mdtag" id="m-datetag"></div>
+<div class="mdtit" id="m-title"></div>
+<div class="spills" id="m-spills"></div>
+<div id="m-cgpill"></div>
+<div id="m-summary"></div>
+<div class="ferrow">
+<div class="sectlbl">Ferie / assenza in questo giorno</div>
+<select class="fersel" id="m-fersel" onchange="setDayLeave(this.value)"></select>
+</div>
+<div class="ferrow">
+<div class="sectlbl">Indennità automatiche di oggi</div>
+<div id="m-auto"></div>
+</div>
+<div class="sectlbl">Note del giorno</div>
+<textarea class="jtxt" id="m-txt"
+placeholder="Scrivi cosa hai fatto oggi...&#10;Es: scorta alle 9, 2 ore di straordinario, rientro alle 22"
+oninput="previewA()"></textarea>
+<div class="jhint">💡 Riconosce automaticamente: straordinari, scorte, servizi esterni...</div>
+<div class="aprev" id="m-aprev"></div>
+<div style="margin-top:14px">
+<div class="sectlbl">Indennità del giorno</div>
+<div class="amed" id="m-amed"></div>
+</div>
+<button class="bsave" onclick="saveDay()">Salva</button>
+<button class="bdel" id="m-baltro" onclick="removeAltro()" style="display:none">Rimuovi "Altro servizio" (torna al turno normale)</button>
+<button class="bdel" id="m-bdel" onclick="delEntry()" style="display:none">Elimina voce</button>
+</div>
+</div>
+<!-- ══ MODAL: ASSEGNA FERIE (selezione multipla) ══ -->
+<div class="ov" id="ov-leave" onclick="ovOut(event,'ov-leave')">
+<div class="mdl">
+<button class="mclose" onclick="cancelLeaveSheet()">×</button>
+<div class="mdtag" id="lv-tag"></div>
+<div class="mdtit">Assegna ferie</div>
+<div id="lv-list"></div>
+<button class="bdel" style="margin-top:4px" onclick="applyLeaveFromSheet(null)">Rimuovi ferie da questi giorni</button>
+<button class="lvopt" style="margin-top:14px;border-color:rgba(99,102,241,.35)" onclick="openAltroSheet()">
+<span class="lvico">🔧</span>
+<span class="lvname">Altro servizio</span>
+<span class="lvrem">orario + indennità</span>
+</button>
+</div>
+</div>
+<!-- ══ MODAL: ALTRO SERVIZIO ══ -->
+<div class="ov" id="ov-altro" onclick="ovOut(event,'ov-altro')">
+<div class="mdl">
+<button class="mclose" onclick="cancelAltroSheet()">×</button>
+<div class="mdtag" id="alt-tag"></div>
+<div class="mdtit">Altro servizio</div>
+<div class="sectlbl">Orario</div>
+<input class="jtxt" style="min-height:auto;padding:11px 12px" id="alt-orario" placeholder="Es. 14:00 - 22:00">
+<div class="sectlbl" style="margin-top:12px">Descrizione (facoltativa)</div>
+<input class="jtxt" style="min-height:auto;padding:11px 12px" id="alt-desc" placeholder="Es. servizio di scorta, evento...">
+<div style="margin-top:14px">
+<div class="sectlbl">Indennità da aggiungere</div>
+<div class="amed" id="alt-amed"></div>
+</div>
+<button class="bsave" onclick="saveAltro()">Salva</button>
+</div>
+</div>
+<!-- ══ MODAL: GIORNI INDENNITÀ ══ -->
+<div class="ov" id="ov-allowdays" onclick="ovOut(event,'ov-allowdays')">
+<div class="mdl">
+<button class="mclose" onclick="closeOv('ov-allowdays')">×</button>
+<div class="mdtag" id="ad-tag"></div>
+<div class="mdtit" id="ad-title"></div>
+<div id="ad-list"></div>
+</div>
+</div>
+<script>
+'use strict';
+// ── COSTANTI ─────────────────────────────────────────────────────────────
+const SH = ['S','P','M','N','R'];
+const SHNAME = {S:'Sera',P:'Pomeriggio',M:'Mattina',N:'Notte',R:'Riposo'};
+const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+const GIORNI = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+const GDLONG = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+const WDLBLS = ['L','M','M','G','V','S','D'];
+const LVCOLORS = {ordinario:'#4ade80',recuperi:'#60a5fa',legge937:'#fbbf24',straord_cong:'#f87171'};
+const DEF = {
+configured: false,
+myName: 'Io',
+refDate: '2026-01-01',
+myShift: 0,
+cgRefDate: '2026-01-01',
+cgRefDay: 0,
+allowances: [
+{ id:'buonopasto', name:'Buono Pasto', icon:'🍽️', trigger:'shift', unit:'flat', rate:0, keywords:[], shifts:['S','P'] },
+{ id:'controllo_territorio', name:'Controllo del Territorio', icon:'🚨', trigger:'shift', unit:'flat', rate:0, keywords:[], shifts:['S','N'], cgFilter:'fuori', suppressedByOp:true },
+{ id:'strao', name:'Straordinario', icon:'⏱️', trigger:'keyword', unit:'hour', rate:0,
+keywords:['straordinario','straordinari','ore extra','h.s.','hs','fuori orario'] },
+{ id:'esterno', name:'Serv. Esterno', icon:'🚔', trigger:'fuori', unit:'flat', rate:0, suppressedByOp:true,
+keywords:['scorta','scorte','esterno','trasferta','piantonamento','traduzione','trasferimento'] },
+{ id:'op', name:'Ordine Pubblico', icon:'🛡️', trigger:'keyword', unit:'flat', rate:0,
+keywords:['ordine pubblico','o.p.','op '] },
+],
+leaveTypes: [
+{ id:'ordinario', name:'Congedo Ordinario', icon:'🏖️', total:0, totalsByYear:{} },
+{ id:'recuperi', name:'Recuperi Riposo', icon:'😴', total:0, totalsByYear:{} },
+{ id:'legge937', name:'Legge 937', icon:'📋', total:0, totalsByYear:{} },
+{ id:'straord_cong', name:'Congedo Straordinario', icon:'📄', total:0, totalsByYear:{} },
+]
+};
+// ── STORAGE ───────────────────────────────────────────────────────────────
+function getS(){
+try{
+const raw=localStorage.getItem('ts_cfg');
+if(!raw) return JSON.parse(JSON.stringify(DEF));
+const s=JSON.parse(raw);
+const defAl=DEF.allowances.map(d=>{
+const sv=(s.allowances||[]).find(a=>a.id===d.id);
+if(!sv) return d;
+return{...d,rate:sv.rate!==undefined?sv.rate:d.rate,keywords:sv.keywords!==undefined?sv.keywords:d.keywords};
+});
+const extraAl=(s.allowances||[]).filter(a=>!DEF.allowances.some(d=>d.id===a.id)&&a.id!=='notturna'&&a.id!=='festiva');
+const defLv=DEF.leaveTypes.map(d=>{
+const sv=(s.leaveTypes||[]).find(a=>a.id===d.id);
+if(!sv) return d;
+return{...d,total:sv.total!==undefined?sv.total:d.total,totalsByYear:sv.totalsByYear!==undefined?sv.totalsByYear:d.totalsByYear};
+});
+return {...JSON.parse(JSON.stringify(DEF)),...s,allowances:[...defAl,...extraAl],leaveTypes:defLv};
+}catch{return JSON.parse(JSON.stringify(DEF))}
+}
+function saveS(s){localStorage.setItem('ts_cfg',JSON.stringify(s))}
+function getEntries(){try{return JSON.parse(localStorage.getItem('ts_entries')||'[]')}catch{return[]}}
+function saveEntries(e){localStorage.setItem('ts_entries',JSON.stringify(e))}
+function getEntry(d){return getEntries().find(e=>e.date===d)||null}
+function getAById(id){return getS().allowances.find(a=>a.id===id)}
+function getLvById(id){return getS().leaveTypes.find(a=>a.id===id)}
+function getLeaves(){try{return JSON.parse(localStorage.getItem('ts_leaves')||'{}')}catch{return{}}}
+function saveLeaves(o){localStorage.setItem('ts_leaves',JSON.stringify(o))}
+function leaveOn(date){return getLeaves()[date]||null}
+function altroOn(date){const e=getEntry(date);return !!(e&&e.altro)}
+// ── DATE UTILS ────────────────────────────────────────────────────────────
+function todayStr(){return new Date().toISOString().split('T')[0]}
+function dp(s){return new Date(s+'T12:00:00')}
+function ddiff(a,b){return Math.round((dp(b)-dp(a))/86400000)}
+function ds(y,m,d){return`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function monthKey(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+// ── ROTAZIONE ─────────────────────────────────────────────────────────────
+function shiftOn(date,refDate,refIdx){
+const diff=ddiff(refDate,date);
+return SH[((refIdx+diff)%5+5)%5];
+}
+function myShiftOn(date){const s=getS();return shiftOn(date,s.refDate,s.myShift)}
+function cgOn(date){
+const s=getS();
+const diff=ddiff(s.cgRefDate,date);
+const pos=((s.cgRefDay+diff)%21+21)%21;
+return pos>=14?'CG':'F';
+}
+// ── FESTIVITÀ ─────────────────────────────────────────────────────────────
+function easter(y){
+const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4;
+const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
+const m=Math.floor((a+11*h+22*l)/451);
+const mo=Math.floor((h+l-7*m+114)/31),dy=((h+l-7*m+114)%31)+1;
+return new Date(y,mo-1,dy,12,0,0);
+}
+function isFestivo(date){
+const d=dp(date),mo=d.getMonth()+1,dy=d.getDate(),y=d.getFullYear(),dow=d.getDay();
+if(dow===0) return true;
+const fix=[[1,1],[1,6],[4,25],[5,1],[6,2],[8,15],[11,1],[12,8],[12,25],[12,26]];
+if(fix.some(([m,dd])=>m===mo&&dd===dy)) return true;
+const pas=easter(y);
+const pasLun=new Date(pas);pasLun.setDate(pasLun.getDate()+1);
+return dp(date).getTime()===pas.getTime()||dp(date).getTime()===pasLun.getTime();
+}
+// ── AUTO-TRIGGER HELPERS ───────────────────────────────────────────────────
+function computeAutoHit(a,date,shift,isAltro){
+if(isAltro) return false;
+if(a.trigger==='night') return shift==='N';
+if(a.trigger==='holiday') return isFestivo(date);
+if(a.trigger==='shift'){
+if(!(a.shifts||[]).includes(shift)) return false;
+if(a.cgFilter==='fuori') return cgOn(date)==='F';
+return true;
+}
+if(a.trigger==='fuori') return cgOn(date)==='F' && shift!=='R';
+return false;
+}
+function opAppliesForDate(entry,text){
+const opDef=getAById('op');
+if(!opDef) return false;
+const saved=(entry?.allowances||[]).find(x=>x.id==='op');
+if(saved&&saved.qty>0) return true;
+if((opDef.keywords||[]).length&&text){
+return opDef.keywords.some(kw=>text.toLowerCase().includes(kw.toLowerCase()));
+}
+return false;
+}
+// ── PARSING INDENNITÀ ─────────────────────────────────────────────────────
+function parseA(date,text){
+const s=getS();
+const t=text.toLowerCase();
+const shift=myShiftOn(date);
+const onLeave=leaveOn(date);
+const onAltro=altroOn(date);
+const opApplies=opAppliesForDate(getEntry(date),text);
+const result=[];
+s.allowances.forEach(a=>{
+if((onLeave||onAltro) && a.trigger!=='keyword' && !(a.keywords&&a.keywords.length)) return;
+if(opApplies && a.suppressedByOp) return;
+const autoHit=computeAutoHit(a,date,shift,onLeave||onAltro);
+if(autoHit){
+result.push({id:a.id,qty:1,auto:true});
+return;
+}
+if((a.keywords||[]).length){
+const found=a.keywords.some(kw=>t.includes(kw.toLowerCase()));
+if(found){
+let qty=1;
+if(a.unit==='hour'){
+const m=t.match(/(\d+(?:[.,]\d+)?)\s*(?:ore?\b|h(?:ore?\b)?)/);
+if(m) qty=parseFloat(m[1].replace(',','.'));
+}
+result.push({id:a.id,qty,auto:false});
+}
+}
+});
+return result;
+}
+// ── STATE ─────────────────────────────────────────────────────────────────
+let curDate=new Date();
+let ferYear=new Date().getFullYear();
+let modalDate=null;
+let curPage='cal';
+// ── NAVIGAZIONE ───────────────────────────────────────────────────────────
+function goPage(name,btn){
+document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('on'));
+document.getElementById('pg-'+name).classList.add('on');
+(btn||document.getElementById('nt-'+name)).classList.add('on');
+document.getElementById('fab-dir').style.display=name==='dir'?'':'none';
+curPage=name;
+render(name);
+}
+function chMonth(d){
+curDate=new Date(curDate.getFullYear(),curDate.getMonth()+d,1);
+render(curPage);
+}
+function render(name){
+if(name==='cal') renderCal();
+else if(name==='dir') renderDir();
+else if(name==='ind') renderInd();
+else if(name==='fer') renderFerie();
+else if(name==='set') renderSet();
+}
+// ── CALENDARIO ────────────────────────────────────────────────────────────
+function renderCal(){
+const s=getS();
+const y=curDate.getFullYear(),mo=curDate.getMonth();
+document.getElementById('cal-lbl').textContent=MESI[mo]+' '+y;
+document.getElementById('setup-banner').style.display=s.configured?'none':'flex';
+document.getElementById('wdays').innerHTML=WDLBLS.map(d=>`<div class="wday">${d}</div>`).join('');
+const firstDow=new Date(y,mo,1).getDay();
+const startOff=(firstDow+6)%7;
+const daysInMo=new Date(y,mo+1,0).getDate();
+const today=todayStr();
+const entryDates=new Set(getEntries().map(e=>e.date));
+const altroDates=new Set(getEntries().filter(e=>e.altro).map(e=>e.date));
+const leaves=getLeaves();
+let html='';
+for(let i=0;i<startOff;i++) html+=`<div class="cc empty"></div>`;
+for(let d=1;d<=daysInMo;d++){
+const dateS=ds(y,mo+1,d);
+const myShift=s.configured?myShiftOn(dateS):null;
+const cg=s.configured?cgOn(dateS):null;
+const isToday=dateS===today;
+const hasEntry=entryDates.has(dateS);
+const lv=leaves[dateS];
+const isAltro=altroDates.has(dateS);
+let cls='cc'+(isToday?' today':'')+(hasEntry?' hasentry':'');
+const cgBadge=cg==='CG'?`<div class="cgbadge">CDG</div>`:'';
+let inner;
+let styleAttr='';
+if(lv){
+const lvDef=s.leaveTypes.find(t=>t.id===lv);
+const col=LVCOLORS[lv]||'#a5b4fc';
+styleAttr=`style="border-color:${col};background:${col}22"`;
+inner=`<div class="cnum">${d}</div><div class="leaveiconcell">${lvDef?lvDef.icon:'🏖️'}</div>`;
+}else if(isAltro){
+styleAttr=`style="border-color:#a78bfa;background:#a78bfa22"`;
+inner=`<div class="cnum">${d}</div><div class="leaveiconcell">🔧</div>`;
+}else{
+inner=`<div class="cnum">${d}</div>${myShift?`<div class="cmsh">${myShift}</div>`:''}`;
+}
+html+=`<div class="${cls}" data-date="${dateS}" ${styleAttr}>${cgBadge}${inner}</div>`;
+}
+document.getElementById('cgrid').innerHTML=html;
+const legHtml=SH.map(sh=>
+`<div class="legit"><b>${sh}</b> – ${SHNAME[sh]}</div>`
+).join('')+`<div class="legit"><b>CDG</b> – Corpo di Guardia</div>`+
+s.leaveTypes.map(lt=>`<div class="legit"><span class="legdot" style="background:${LVCOLORS[lt.id]||'#a5b4fc'}"></span>${lt.icon} ${lt.name}</div>`).join('')+
+`<div class="legit"><span class="legdot" style="background:#a78bfa"></span>🔧 Altro servizio</div>`;
+document.getElementById('leg').innerHTML=legHtml;
+}
+// ── MODAL GIORNO ──────────────────────────────────────────────────────────
+function openDay(date){
+modalDate=date;
+const s=getS();
+const d=dp(date);
+const entry=getEntry(date);
+document.getElementById('m-datetag').textContent=
+`${GDLONG[d.getDay()]}, ${d.getDate()} ${MESI[d.getMonth()]} ${d.getFullYear()}`;
+const myShift=s.configured?myShiftOn(date):'?';
+if(entry&&entry.altro){
+document.getElementById('m-title').innerHTML=`🔧 <b>Altro servizio</b> (invece di ${myShift} – ${SHNAME[myShift]||''})`;
+}else{
+document.getElementById('m-title').innerHTML=
+`Il tuo turno: <b>${myShift} – ${SHNAME[myShift]||''}</b>`;
+}
+document.getElementById('m-spills').innerHTML='';
+if(s.configured){
+const cg=cgOn(date);
+document.getElementById('m-cgpill').innerHTML=
+`<div class="cgpill ${cg==='CG'?'cg':'f'}">${cg==='CG'?'🏛️ Corpo di Guardia':'🚗 Fuori'}</div>`;
+} else document.getElementById('m-cgpill').innerHTML='';
+// select ferie
+const curLv=leaveOn(date)||'';
+document.getElementById('m-fersel').innerHTML=
+`<option value="">Nessuna ferie/assenza</option>`+
+s.leaveTypes.map(lt=>`<option value="${lt.id}" ${curLv===lt.id?'selected':''}>${lt.icon} ${lt.name}</option>`).join('');
+document.getElementById('m-txt').value=entry?.text||'';
+buildAmed(date, entry?.text||'', entry?.allowances||null);
+document.getElementById('m-bdel').style.display=entry?'':'none';
+document.getElementById('m-baltro').style.display=(entry&&entry.altro)?'':'none';
+document.getElementById('ov-day').classList.add('on');
+}
+function setDayLeave(val){
+applyLeave([modalDate], val||null);
+openDay(modalDate);
+}
+function previewA(){
+buildAmed(modalDate,document.getElementById('m-txt').value,null);
+}
+function buildAmed(date,text,savedA){
+const s=getS();
+const parsed=parseA(date,text||'');
+const autoHits=parsed.filter(p=>p.auto);
+const kwParsed=parsed.filter(p=>!p.auto);
+let prevHtml='';
+if(kwParsed.length>0){
+prevHtml=`<div class="sectlbl" style="margin-bottom:6px">Rilevato dal testo</div><div class="achips">`+
+kwParsed.map(p=>{
+const def=getAById(p.id);
+if(!def) return'';
+const qty=def.unit==='hour'?`${p.qty} ore`:'';
+return`<div class="achip kw">${def.icon} ${def.name}${qty?' · '+qty:''}</div>`;
+}).join('')+`</div>`;
+} else if((text||'').trim()){
+prevHtml=`<div class="achips"><div class="achip none">Nessuna indennità rilevata dal testo</div></div>`;
+}
+document.getElementById('m-aprev').innerHTML=prevHtml;
+const lv=leaveOn(date);
+let autoHtml;
+if(lv){
+const lvDef=getLvById(lv);
+autoHtml=`<div class="achips"><div class="achip none">Nessuna: giorno di ${lvDef?lvDef.name:'ferie'}</div></div>`;
+}else if(autoHits.length>0){
+autoHtml=`<div class="achips">`+autoHits.map(p=>{
+const def=getAById(p.id);
+return def?`<div class="achip auto">${def.icon} ${def.name} · incluso in automatico</div>`:'';
+}).join('')+`</div>`;
+}else{
+autoHtml=`<div class="achips"><div class="achip none">Nessuna indennità automatica oggi</div></div>`;
+}
+document.getElementById('m-auto').innerHTML=autoHtml;
+document.getElementById('m-amed').innerHTML=s.allowances.map(a=>{
+const sv=savedA?savedA.find(e=>e.id===a.id):null;
+let qty;
+if(sv){qty=sv.qty;}
+else{const p=parsed.find(x=>x.id===a.id);qty=p?p.qty:0;}
+return`<div class="amed-row">
+<span class="amed-name">${a.icon} ${a.name}</span>
+<input class="amed-qty" type="number" min="0" step="${a.unit==='hour'?'0.5':'1'}"
+value="${qty}" id="aq-${a.id}" oninput="this.dataset.touched='1';updateDaySummary()" placeholder="0">
+<span class="amed-unit">${a.unit==='hour'?'ore':'×'}</span>
+</div>`;
+}).join('');
+updateDaySummary();
+}
+function updateDaySummary(){
+const s=getS();
+let grand=0;
+const rows=[];
+s.allowances.forEach(a=>{
+const el=document.getElementById('aq-'+a.id);
+const qty=el?parseFloat(el.value)||0:0;
+if(qty<=0) return;
+const total=a.unit==='hour'?(a.rate||0)*qty:(a.rate||0);
+grand+=total;
+const qtyStr=a.unit==='hour'?`${qty} ore`:(qty>1?`×${qty}`:'');
+rows.push(`<div class="daysumrow"><span class="n">${a.icon} ${a.name}${qtyStr?' '+qtyStr:''}</span><span class="v">${total>0?'€ '+total.toFixed(2):'—'}</span></div>`);
+});
+const listHtml=rows.length?`<div class="daysumlist">${rows.join('')}</div>`:`<div class="daysumempty">Nessuna indennità per questo giorno</div>`;
+document.getElementById('m-summary').innerHTML=`
+<div class="daysum">
+<div class="daysumtop">
+<span class="daysumlbl">Riepilogo giorno</span>
+<span class="daysumtot ${grand>0?'':'zero'}">${grand>0?'€ '+grand.toFixed(2):'—'}</span>
+</div>
+${listHtml}
+</div>`;
+}
+function saveDay(){
+const s=getS();
+const text=document.getElementById('m-txt').value.trim();
+const allowances=[];
+s.allowances.forEach(a=>{
+const el=document.getElementById('aq-'+a.id);
+if(!el) return;
+const qty=parseFloat(el.value)||0;
+const isHybrid=a.trigger!=='keyword';
+const touched=el.dataset.touched==='1';
+if(qty>0||(isHybrid&&touched)){
+const total=a.unit==='hour'?(a.rate||0)*qty:qty>0?(a.rate||0):0;
+allowances.push({id:a.id,qty,total});
+}
+});
+if(!text&&allowances.length===0){closeOv('ov-day');return}
+const entries=getEntries().filter(e=>e.date!==modalDate);
+entries.push({date:modalDate,text,allowances});
+saveEntries(entries);
+closeOv('ov-day');
+render(curPage);
+}
+function delEntry(){
+if(!confirm('Eliminare questa voce?')) return;
+saveEntries(getEntries().filter(e=>e.date!==modalDate));
+closeOv('ov-day');
+render(curPage);
+}
+// ── CALCOLO AUTOMATICO MENSILE (turno/notte/festivo + parole chiave) ──────
+function computeMonthAgg(y,mo){
+const s=getS();
+const mk=`${y}-${String(mo+1).padStart(2,'0')}`;
+const agg={};
+s.allowances.forEach(a=>agg[a.id]={def:a,qty:0,total:0,count:0});
+const daysInMo=new Date(y,mo+1,0).getDate();
+const entryByDate={};
+getEntries().filter(e=>e.date.startsWith(mk)).forEach(e=>entryByDate[e.date]=e);
+for(let d=1;d<=daysInMo;d++){
+const dateS=ds(y,mo+1,d);
+if(leaveOn(dateS)) continue;
+const shift=myShiftOn(dateS);
+const text=(entryByDate[dateS]?.text||'').toLowerCase();
+const isAltro=!!(entryByDate[dateS]&&entryByDate[dateS].altro);
+const opApplies=opAppliesForDate(entryByDate[dateS],text);
+s.allowances.forEach(a=>{
+if(a.trigger==='keyword') return; // gestite sotto tramite le voci salvate
+const savedForDay=(entryByDate[dateS]?.allowances||[]).find(x=>x.id===a.id);
+if(savedForDay){
+agg[a.id].qty+=savedForDay.qty;
+if(savedForDay.qty>0){
+agg[a.id].count+=1;
+agg[a.id].total+=savedForDay.total||(a.unit==='hour'?(a.rate||0)*savedForDay.qty:(a.rate||0));
+}
+return;
+}
+if(opApplies && a.suppressedByOp) return;
+const autoHit=computeAutoHit(a,dateS,shift,isAltro);
+if(autoHit){
+agg[a.id].qty+=1;agg[a.id].count+=1;agg[a.id].total+=(a.rate||0);
+}else if((a.keywords||[]).length&&text){
+const found=a.keywords.some(kw=>text.includes(kw.toLowerCase()));
+if(found){
+let qty=1;
+if(a.unit==='hour'){
+const m=text.match(/(\d+(?:[.,]\d+)?)\s*(?:ore?\b|h(?:ore?\b)?)/);
+if(m) qty=parseFloat(m[1].replace(',','.'));
+}
+agg[a.id].qty+=qty;agg[a.id].count+=1;
+agg[a.id].total+=(a.unit==='hour'?(a.rate||0)*qty:(a.rate||0));
+}
+}
+});
+}
+Object.values(entryByDate).forEach(e=>(e.allowances||[]).forEach(ea=>{
+const def=agg[ea.id]&&agg[ea.id].def;
+if(def&&def.trigger==='keyword'&&ea.qty>0){
+agg[ea.id].qty+=ea.qty;
+agg[ea.id].total+=ea.total||(ea.qty*(def.rate||0));
+agg[ea.id].count++;
+}
+}));
+return agg;
+}
+// Elenco dettagliato dei giorni in cui una specifica indennità è stata applicata nel mese
+function getAllowanceDaysForMonth(y,mo,id){
+const s=getS();
+const a=s.allowances.find(x=>x.id===id);
+if(!a) return [];
+const mk=`${y}-${String(mo+1).padStart(2,'0')}`;
+const daysInMo=new Date(y,mo+1,0).getDate();
+const entryByDate={};
+getEntries().filter(e=>e.date.startsWith(mk)).forEach(e=>entryByDate[e.date]=e);
+const results=[];
+for(let d=1;d<=daysInMo;d++){
+const dateS=ds(y,mo+1,d);
+const entry=entryByDate[dateS];
+if(a.trigger==='keyword'){
+const saved=(entry?.allowances||[]).find(x=>x.id===id);
+if(saved&&saved.qty>0) results.push({date:dateS,qty:saved.qty,total:saved.total||(a.unit==='hour'?(a.rate||0)*saved.qty:(a.rate||0))});
+continue;
+}
+if(leaveOn(dateS)) continue;
+const isAltro=!!(entry&&entry.altro);
+const text=(entry?.text||'').toLowerCase();
+const opApplies=opAppliesForDate(entry,text);
+const savedForDay=(entry?.allowances||[]).find(x=>x.id===id);
+if(savedForDay){
+if(savedForDay.qty>0) results.push({date:dateS,qty:savedForDay.qty,total:savedForDay.total||(a.unit==='hour'?(a.rate||0)*savedForDay.qty:(a.rate||0))});
+continue;
+}
+if(opApplies&&a.suppressedByOp) continue;
+const shift=myShiftOn(dateS);
+const autoHit=computeAutoHit(a,dateS,shift,isAltro);
+if(autoHit){
+results.push({date:dateS,qty:1,total:a.rate||0});
+}else if((a.keywords||[]).length&&text){
+const found=a.keywords.some(kw=>text.includes(kw.toLowerCase()));
+if(found){
+let qty=1;
+if(a.unit==='hour'){
+const m=text.match(/(\d+(?:[.,]\d+)?)\s*(?:ore?\b|h(?:ore?\b)?)/);
+if(m) qty=parseFloat(m[1].replace(',','.'));
+}
+results.push({date:dateS,qty,total:a.unit==='hour'?(a.rate||0)*qty:(a.rate||0)});
+}
+}
+}
+return results;
+}
+function openAllowanceDays(id){
+const s=getS();
+const a=s.allowances.find(x=>x.id===id);
+if(!a) return;
+const y=curDate.getFullYear(),mo=curDate.getMonth();
+const days=getAllowanceDaysForMonth(y,mo,id).sort((x,z)=>x.date.localeCompare(z.date));
+document.getElementById('ad-tag').textContent=`${MESI[mo]} ${y}`;
+document.getElementById('ad-title').textContent=`${a.icon} ${a.name}`;
+if(days.length===0){
+document.getElementById('ad-list').innerHTML=`<div class="daysumempty">Nessun giorno questo mese</div>`;
+}else{
+const grand=days.reduce((sum,dd)=>sum+dd.total,0);
+document.getElementById('ad-list').innerHTML=
+`<div class="daysumlist">`+
+days.map(dd=>{
+const d=dp(dd.date);
+const qtyStr=a.unit==='hour'?`${dd.qty} ore`:(dd.qty>1?`×${dd.qty}`:'');
+return`<div class="daysumrow"><span class="n">${GIORNI[d.getDay()]} ${d.getDate()} ${MESI[d.getMonth()]}${qtyStr?' · '+qtyStr:''}</span><span class="v">${dd.total>0?'€ '+dd.total.toFixed(2):'—'}</span></div>`;
+}).join('')+
+`</div>
+<div class="daysumtop" style="border-top:1px solid var(--bd);padding-top:10px;margin-top:10px;margin-bottom:0">
+<span class="daysumlbl">Totale</span><span class="daysumtot">€ ${grand.toFixed(2)}</span>
+</div>`;
+}
+document.getElementById('ov-allowdays').classList.add('on');
+}
+// ── DIARIO ────────────────────────────────────────────────────────────────
+function renderDir(){
+const y=curDate.getFullYear(),mo=curDate.getMonth();
+document.getElementById('dir-lbl').textContent=MESI[mo]+' '+y;
+const s=getS();
+const mk=monthKey(curDate);
+const entries=getEntries().filter(e=>e.date.startsWith(mk))
+.sort((a,b)=>b.date.localeCompare(a.date));
+if(!entries.length){
+document.getElementById('dlist').innerHTML=`<div class="empty">
+<div class="emico">📝</div>
+<div class="emtxt">Nessuna nota questo mese.<br>Premi <b>+</b> per aggiungere la nota di oggi.</div>
+</div>`;
+return;
+}
+document.getElementById('dlist').innerHTML=entries.map(e=>{
+const d=dp(e.date);
+const sh=s.configured?myShiftOn(e.date):'?';
+const chips=(e.allowances||[]).map(a=>{
+const def=getAById(a.id);
+return def?`<div class="dichip">${def.icon} ${def.name}${a.qty>1?` ×${a.qty}`:''}</div>`:'';
+}).join('');
+return`<div class="ditem" onclick="openDay('${e.date}')">
+<div class="ditop">
+<span class="didate">${GIORNI[d.getDay()]} ${d.getDate()} ${MESI[d.getMonth()]}</span>
+<span style="font-size:12px;font-weight:700;color:var(--tx2)">${e.altro?'🔧 Altro servizio':`${sh} – ${SHNAME[sh]||''}`}</span>
+</div>
+${e.text?`<div class="distxt">${e.text}</div>`:''}
+${chips?`<div class="dichips">${chips}</div>`:''}
+</div>`;
+}).join('');
+}
+// ── INDENNITÀ ─────────────────────────────────────────────────────────────
+function renderInd(){
+const y=curDate.getFullYear(),mo=curDate.getMonth();
+document.getElementById('ind-lbl').textContent=MESI[mo]+' '+y;
+const s=getS();
+const agg=computeMonthAgg(y,mo);
+const grand=Object.values(agg).reduce((s,v)=>s+v.total,0);
+const totalCard=`<div class="itcard">
+<div class="itlbl">Totale ${MESI[mo]}</div>
+<div class="itval">${grand>0?'€ '+grand.toFixed(2):'–'}</div>
+</div>`;
+const items=s.allowances.map(a=>{
+const v=agg[a.id];
+const hasRate=a.rate>0;
+let amtStr;
+if(v.total>0) amtStr='€ '+v.total.toFixed(2);
+else if(v.qty>0&&!hasRate) amtStr=v.qty+(a.unit==='hour'?' ore':'×');
+else amtStr='–';
+const cntStr=v.count>0
+?`${v.count} voce${v.count>1?'i':''}${a.unit==='hour'?' · '+v.qty+' ore tot':''}`
+:'Nessuna voce';
+return`<div class="iitem" onclick="openAllowanceDays('${a.id}')" style="cursor:pointer">
+<div class="iiico">${a.icon}</div>
+<div class="iinfo"><div class="iiname">${a.name}</div><div class="iicnt">${cntStr}</div></div>
+<div class="iiamt ${v.total>0?'pos':'zero'}">${amtStr}</div>
+</div>`;
+}).join('');
+document.getElementById('icont').innerHTML=totalCard+items+
+`<button class="bexp" onclick="exportMonth()">📋 Copia riepilogo</button>`+
+`<button class="bexp" onclick="exportPDF()">📄 Esporta PDF</button>`;
+}
+function loadScriptOnce(src){
+return new Promise((resolve,reject)=>{
+if(document.querySelector(`script[src="${src}"]`)){resolve();return;}
+const el=document.createElement('script');
+el.src=src;
+el.onload=resolve;
+el.onerror=()=>reject(new Error('load failed'));
+document.head.appendChild(el);
+});
+}
+async function exportPDF(){
+const btn=event?event.target:null;
+const origLabel=btn?btn.textContent:'';
+if(btn){btn.textContent='Genero PDF...';btn.disabled=true;}
+try{
+await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+}catch(e){
+alert('Impossibile caricare il generatore PDF: serve una connessione internet.');
+if(btn){btn.textContent=origLabel;btn.disabled=false;}
+return;
+}
+const s=getS();
+const y=curDate.getFullYear(),mo=curDate.getMonth();
+const agg=computeMonthAgg(y,mo);
+const { jsPDF }=window.jspdf;
+const doc=new jsPDF();
+let yy=20;
+doc.setFontSize(16);
+doc.text(`Riepilogo Indennità – ${MESI[mo]} ${y}`,14,yy);
+yy+=6;
+doc.setFontSize(10);
+doc.setTextColor(120);
+doc.text(`${s.myName||'Agente'} · generato il ${new Date().toLocaleDateString('it-IT')}`,14,yy);
+yy+=10;
+doc.setDrawColor(200);
+doc.line(14,yy,196,yy);
+yy+=8;
+doc.setFontSize(11);
+doc.setTextColor(30);
+doc.text('Indennità',14,yy);
+doc.text('Quantità',110,yy);
+doc.text('Importo',170,yy);
+yy+=2;
+doc.line(14,yy,196,yy);
+yy+=7;
+let grand=0;
+s.allowances.forEach(a=>{
+const v=agg[a.id];
+if(!v||v.qty<=0) return;
+grand+=v.total;
+doc.setFontSize(10);
+doc.text(`${a.name}`,14,yy);
+doc.text(`${v.qty}${a.unit==='hour'?' ore':'×'}`,110,yy);
+doc.text(v.total>0?`€ ${v.total.toFixed(2)}`:'—',170,yy);
+yy+=7;
+if(yy>270){doc.addPage();yy=20;}
+});
+yy+=3;
+doc.line(14,yy,196,yy);
+yy+=9;
+doc.setFontSize(13);
+doc.setTextColor(20);
+doc.text('Totale mese',14,yy);
+doc.text(`€ ${grand.toFixed(2)}`,170,yy);
+doc.save(`riepilogo-${MESI[mo].toLowerCase()}-${y}.pdf`);
+if(btn){btn.textContent=origLabel;btn.disabled=false;}
+}
+function exportMonth(){
+const s=getS();
+const y=curDate.getFullYear(),mo=curDate.getMonth();
+const mk=monthKey(curDate);
+const daysInMo=new Date(y,mo+1,0).getDate();
+const entryByDate={};
+getEntries().filter(e=>e.date.startsWith(mk)).forEach(e=>entryByDate[e.date]=e);
+let txt=`RIEPILOGO ${MESI[mo].toUpperCase()} ${y}\n${'─'.repeat(30)}\n\n`;
+for(let d=1;d<=daysInMo;d++){
+const dateS=ds(y,mo+1,d);
+const dd=dp(dateS);
+const sh=s.configured?myShiftOn(dateS):'?';
+const cg=s.configured?cgOn(dateS):'';
+const lv=leaveOn(dateS);
+const e=entryByDate[dateS];
+const isAltro=!!(e&&e.altro);
+const entryAllow=e?.allowances||[];
+const opApplies=opAppliesForDate(e,e?.text||'');
+const autoLines=[];
+if(!lv&&!isAltro){
+s.allowances.forEach(a=>{
+if(a.trigger==='keyword') return;
+if(entryAllow.some(x=>x.id===a.id)) return; // gia' gestita esplicitamente (vedi manualLines)
+if(opApplies && a.suppressedByOp) return;
+if(computeAutoHit(a,dateS,sh,false)) autoLines.push(a);
+});
+}
+const manualLines=entryAllow.filter(a=>a.qty>0).filter(a=>getAById(a.id));
+if(!e&&autoLines.length===0&&!lv) continue;
+let line=`${dd.getDate()} ${MESI[dd.getMonth()]} – ${isAltro?'Altro servizio':sh}${cg?' ('+cg+')':''}${lv?` [${getLvById(lv)?.name||'Ferie'}]`:''}\n`;
+if(e?.text) line+=` Note: ${e.text}\n`;
+autoLines.forEach(a=>{
+line+=` ${a.icon} ${a.name}${a.rate>0?` → € ${a.rate.toFixed(2)}`:''}\n`;
+});
+manualLines.forEach(a=>{
+const def=getAById(a.id);
+line+=` ${def.icon} ${def.name}: ${a.qty}${def.unit==='hour'?' ore':''}`+
+(a.total>0?` → € ${a.total.toFixed(2)}`:'')+'\n';
+});
+txt+=line+'\n';
+}
+const agg=computeMonthAgg(y,mo);
+txt+=`${'─'.repeat(30)}\nTOTALI\n`;
+s.allowances.forEach(a=>{
+const v=agg[a.id];
+if(v.qty>0) txt+=`${a.icon} ${a.name}: ${v.qty}${a.unit==='hour'?' ore':'×'}`+
+(v.total>0?` → € ${v.total.toFixed(2)}`:'')+'\n';
+});
+navigator.clipboard.writeText(txt).then(()=>{
+const b=document.querySelector('#icont .bexp');
+b.textContent='✓ Copiato!';
+setTimeout(()=>b.innerHTML='📋 Copia riepilogo',2000);
+}).catch(()=>alert(txt));
+}
+// ── FERIE ─────────────────────────────────────────────────────────────────
+function chFerYear(delta){
+ferYear+=delta;
+renderFerie();
+}
+function renderFerie(){
+document.getElementById('fer-lbl').textContent=ferYear;
+const s=getS();
+const leaves=getLeaves();
+const yPrefix=String(ferYear)+'-';
+const cards=s.leaveTypes.map(lt=>{
+const dates=Object.keys(leaves).filter(d=>d.startsWith(yPrefix)&&leaves[d]===lt.id).sort();
+const used=dates.length;
+const totalsByYear=lt.totalsByYear||{};
+const total=totalsByYear[ferYear]!==undefined?totalsByYear[ferYear]:(lt.total||0);
+const remaining=(parseFloat(total)||0)-used;
+const chips=dates.map(d=>{
+const dd=dp(d);
+return `<div class="achip kw" style="cursor:pointer" onclick="removeLeaveDay('${d}')">${dd.getDate()}/${dd.getMonth()+1} ×</div>`;
+}).join('');
+return `<div class="scard">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+<span style="font-size:20px">${lt.icon}</span>
+<span style="font-weight:600;flex:1;font-size:14px">${lt.name}</span>
+</div>
+<div class="srow" style="grid-template-columns:1fr 1fr 1fr">
+<div>
+<div class="slbl">Totale ${ferYear}</div>
+<input class="sinp" type="number" min="0" step="1" value="${total}" onchange="setLeaveTotal('${lt.id}',this.value)">
+</div>
+<div>
+<div class="slbl">Usati</div>
+<div class="sinp" style="background:transparent;border-color:transparent;padding-top:9px;text-align:center">${used}</div>
+</div>
+<div>
+<div class="slbl">Rimanenti</div>
+<div class="sinp ferremain" style="background:transparent;border-color:transparent;padding-top:9px;text-align:center;color:${remaining<0?'var(--red)':'var(--grn)'}">${remaining}</div>
+</div>
+</div>
+${dates.length?`<div class="achips" style="margin-top:10px">${chips}</div>`:''}
+</div>`;
+}).join('');
+document.getElementById('fcont').innerHTML=cards;
+}
+function setLeaveTotal(id,val){
+const s=getS();
+s.leaveTypes=s.leaveTypes.map(l=>{
+if(l.id!==id) return l;
+const totalsByYear={...(l.totalsByYear||{})};
+totalsByYear[ferYear]=parseFloat(val)||0;
+return{...l,totalsByYear};
+});
+saveS(s);
+renderFerie();
+}
+function removeLeaveDay(date){
+applyLeave([date],null);
+renderFerie();
+}
+// applica (o rimuove, se typeId è null/falsy) un tipo di ferie a un elenco di date
+function applyLeave(dates,typeId){
+const leaves=getLeaves();
+dates.forEach(d=>{
+if(!typeId) delete leaves[d];
+else leaves[d]=typeId;
+});
+saveLeaves(leaves);
+if(typeId){
+let entries=getEntries();
+let changed=false;
+entries=entries.map(e=>{
+if(!dates.includes(e.date)) return e;
+const before=e.allowances||[];
+const after=before.filter(a=>{
+const def=getAById(a.id);
+return def&&def.trigger==='keyword';
+});
+if(after.length!==before.length){changed=true;return{...e,allowances:after};}
+return e;
+});
+if(changed) saveEntries(entries);
+}
+render(curPage);
+if(document.getElementById('pg-fer').classList.contains('on')) renderFerie();
+}
+// ── SELEZIONE MULTIPLA (tieni premuto + trascina) ─────────────────────────
+let gest=null; // stato del gesto in corso: {startX,startY,longPress,timer,date}
+let suppressClick=false; // vero se il click nativo che segue va ignorato (dopo tieni-premuto o trascinamento)
+let selDates=new Set();
+function clearSelectionVisual(){
+document.querySelectorAll('#cgrid .cc.sel').forEach(c=>c.classList.remove('sel'));
+document.getElementById('cgrid').classList.remove('selecting');
+}
+function addToSelection(cell){
+if(!cell||selDates.has(cell.dataset.date)) return;
+selDates.add(cell.dataset.date);
+cell.classList.add('sel');
+}
+function enterSelectMode(cell){
+gest.longPress=true;
+suppressClick=true;
+document.getElementById('cgrid').classList.add('selecting');
+if(navigator.vibrate){try{navigator.vibrate(15)}catch(e){}}
+addToSelection(cell);
+}
+function openLeaveSheet(){
+const s=getS();
+document.getElementById('lv-tag').textContent=`${selDates.size} giorno${selDates.size>1?'i':''} selezionat${selDates.size>1?'i':'o'}`;
+document.getElementById('lv-list').innerHTML=s.leaveTypes.map(lt=>{
+const used=Object.values(getLeaves()).filter(v=>v===lt.id).length;
+const rem=(parseFloat(lt.total)||0)-used;
+return `<div class="lvopt" onclick="applyLeaveFromSheet('${lt.id}')">
+<span class="lvico">${lt.icon}</span>
+<span class="lvname">${lt.name}</span>
+<span class="lvrem">rim. ${rem}</span>
+</div>`;
+}).join('');
+document.getElementById('ov-leave').classList.add('on');
+}
+function applyLeaveFromSheet(typeId){
+applyLeave(Array.from(selDates),typeId);
+closeOv('ov-leave');
+clearSelectionVisual();
+selDates.clear();
+}
+function cancelLeaveSheet(){
+closeOv('ov-leave');
+clearSelectionVisual();
+selDates.clear();
+}
+function openAltroSheet(){
+closeOv('ov-leave');
+const s=getS();
+document.getElementById('alt-tag').textContent=`${selDates.size} giorno${selDates.size>1?'i':''} selezionat${selDates.size>1?'i':'o'}`;
+const dates=Array.from(selDates);
+const single=dates.length===1?dates[0]:null;
+const entry=single?getEntry(single):null;
+document.getElementById('alt-orario').value='';
+document.getElementById('alt-desc').value='';
+document.getElementById('alt-amed').innerHTML=s.allowances.map(a=>{
+const sv=entry?.allowances?.find(x=>x.id===a.id);
+const qty=sv?sv.qty:0;
+return`<div class="amed-row">
+<span class="amed-name">${a.icon} ${a.name}</span>
+<input class="amed-qty" type="number" min="0" step="${a.unit==='hour'?'0.5':'1'}"
+value="${qty}" id="alt-aq-${a.id}" placeholder="0">
+<span class="amed-unit">${a.unit==='hour'?'ore':'×'}</span>
+</div>`;
+}).join('');
+document.getElementById('ov-altro').classList.add('on');
+}
+function saveAltro(){
+const s=getS();
+const orario=document.getElementById('alt-orario').value.trim();
+const desc=document.getElementById('alt-desc').value.trim();
+const newAllow=s.allowances.map(a=>{
+const el=document.getElementById('alt-aq-'+a.id);
+const qty=el?parseFloat(el.value)||0:0;
+const total=a.unit==='hour'?(a.rate||0)*qty:qty>0?(a.rate||0):0;
+return{id:a.id,qty,total};
+}).filter(a=>a.qty>0);
+let extraText='';
+if(orario||desc) extraText=`Altro servizio${orario?': '+orario:''}${desc?' — '+desc:''}`;
+const dates=Array.from(selDates);
+let entries=getEntries();
+dates.forEach(d=>{
+const idx=entries.findIndex(e=>e.date===d);
+let text=idx>-1?entries[idx].text:'';
+if(extraText&&!text.includes(extraText)) text=text?text+'\n'+extraText:extraText;
+const existingAllow=idx>-1?(entries[idx].allowances||[]):[];
+const merged=[...existingAllow.filter(e=>!newAllow.some(n=>n.id===e.id)),...newAllow];
+const entryObj={date:d,text,allowances:merged,altro:true};
+if(idx>-1) entries[idx]=entryObj; else entries.push(entryObj);
+});
+saveEntries(entries);
+closeOv('ov-altro');
+clearSelectionVisual();
+selDates.clear();
+render(curPage);
+}
+function cancelAltroSheet(){
+closeOv('ov-altro');
+clearSelectionVisual();
+selDates.clear();
+}
+function removeAltro(){
+const entries=getEntries();
+const idx=entries.findIndex(e=>e.date===modalDate);
+if(idx>-1){entries[idx]={...entries[idx],altro:false};saveEntries(entries);}
+openDay(modalDate);
+render(curPage);
+}
+function setupSelection(){
+const grid=document.getElementById('cgrid');
+grid.addEventListener('pointerdown',e=>{
+const cell=e.target.closest('.cc:not(.empty)');
+if(!cell) return;
+suppressClick=false;
+gest={startX:e.clientX,startY:e.clientY,longPress:false,timer:null,date:cell.dataset.date};
+gest.timer=setTimeout(()=>{
+if(gest) enterSelectMode(cell);
+},480);
+});
+document.addEventListener('pointermove',e=>{
+if(!gest) return;
+if(!gest.longPress){
+const dx=e.clientX-gest.startX,dy=e.clientY-gest.startY;
+if(Math.abs(dx)>18||Math.abs(dy)>18){clearTimeout(gest.timer);}
+return;
+}
+e.preventDefault();
+const el=document.elementFromPoint(e.clientX,e.clientY);
+const c=el&&el.closest?el.closest('.cc:not(.empty)'):null;
+if(c) addToSelection(c);
+},{passive:false});
+document.addEventListener('pointerup',()=>{
+if(!gest) return;
+const g=gest;
+gest=null;
+clearTimeout(g.timer);
+document.getElementById('cgrid').classList.remove('selecting');
+if(g.longPress&&selDates.size>0) openLeaveSheet();
+});
+document.addEventListener('pointercancel',()=>{
+if(gest) clearTimeout(gest.timer);
+gest=null;
+document.getElementById('cgrid').classList.remove('selecting');
+});
+// Il tap per aprire il giorno usa il click nativo del browser: e' l'unico
+// meccanismo che distingue in modo affidabile su ogni dispositivo un tocco
+// da un trascinamento, senza bisogno di soglie di movimento fatte a mano.
+grid.addEventListener('click',e=>{
+if(suppressClick){suppressClick=false;return;}
+const cell=e.target.closest('.cc:not(.empty)');
+if(cell) openDay(cell.dataset.date);
+});
+}
+// ── SWIPE CAMBIO MESE (solo fuori dalle celle, per non interferire col tap) ─
+function setupSwipe(){
+let sx=null,sy=null,onGridCell=false;
+document.addEventListener('pointerdown',e=>{
+if(curPage!=='cal') return;
+onGridCell=!!e.target.closest('.cc');
+if(onGridCell) return;
+if(!e.target.closest('#pg-cal')) return;
+sx=e.clientX;sy=e.clientY;
+});
+document.addEventListener('pointerup',e=>{
+if(curPage!=='cal'||sx===null||onGridCell) return;
+const dx=e.clientX-sx,dy=e.clientY-sy;
+sx=null;
+if(Math.abs(dx)>60&&Math.abs(dy)<60) chMonth(dx<0?1:-1);
+});
+}
+// ── IMPOSTAZIONI ──────────────────────────────────────────────────────────
+function renderSet(){
+const s=getS();
+const shOpts=SH.map((sh,i)=>
+`<option value="${i}" ${s.myShift===i?'selected':''}>${sh} – ${SHNAME[sh]}</option>`).join('');
+const cgDayOpts=Array.from({length:21},(_,i)=>
+`<option value="${i}" ${s.cgRefDay===i?'selected':''}>${i<14?`Fuori giorno ${i+1}/14`:`CG giorno ${i-13}/7`}</option>`
+).join('');
+const alHtml=s.allowances.map(a=>`
+<div class="acfg">
+<div class="acfgtop">
+<span style="font-size:20px">${a.icon}</span>
+<span class="acfgname">${a.name}</span>
+<span style="font-size:10px;color:var(--tx2)">${a.trigger==='night'?'Auto (Notte)':a.trigger==='holiday'?'Auto (Festivo)':a.trigger==='shift'?`Auto (Turno ${(a.shifts||[]).join('/')}${a.cgFilter==='fuori'?' · solo Fuori':''})`:a.trigger==='fuori'?'Auto (giorni Fuori, no Riposo)':'Parole chiave'}${a.suppressedByOp?' · si toglie con OP':''}</span>
+<button onclick="deleteAllowance('${a.id}')" style="background:none;border:none;color:var(--tx2);font-size:18px;cursor:pointer;padding:0 2px;line-height:1" title="Elimina">×</button>
+</div>
+<div class="acfggrid">
+<div>
+<div class="acfglbl">Importo${a.unit==='hour'?' (€/ora)':' (€ fisso)'}</div>
+<input class="sinp" type="number" min="0" step="0.5" id="ar-${a.id}" value="${a.rate||0}" placeholder="0.00">
+</div>
+${a.trigger==='keyword'?`<div>
+<div class="acfglbl">Parole chiave (separate da virgola)</div>
+<input class="sinp" type="text" id="ak-${a.id}" value="${(a.keywords||[]).join(', ')}" placeholder="parola1, parola2">
+</div>`:`<div>
+<div class="acfglbl">Parole chiave per aggiunta manuale (opzionale)</div>
+<input class="sinp" type="text" id="ak-${a.id}" value="${(a.keywords||[]).join(', ')}" placeholder="es. buono pasto">
+</div>`}
+</div>
+</div>`).join('');
+const newAlHtml=`
+<div class="acfg" style="border-color:rgba(99,102,241,.3)">
+<div style="display:grid;grid-template-columns:52px 1fr;gap:8px;margin-bottom:8px">
+<div>
+<div class="acfglbl">Emoji</div>
+<input class="sinp" id="nal-icon" value="💶" style="text-align:center;font-size:18px;padding:6px 4px">
+</div>
+<div>
+<div class="acfglbl">Nome indennità</div>
+<input class="sinp" id="nal-name" placeholder="Es. Missione, Disagio...">
+</div>
+</div>
+<div class="acfggrid" style="margin-bottom:8px">
+<div>
+<div class="acfglbl">Tipo importo</div>
+<select class="sinp" id="nal-unit">
+<option value="flat">€ fisso a voce</option>
+<option value="hour">€ per ora</option>
+</select>
+</div>
+<div>
+<div class="acfglbl">Importo (€)</div>
+<input class="sinp" type="number" id="nal-rate" placeholder="0.00" min="0" step="0.5">
+</div>
+</div>
+<div>
+<div class="acfglbl">Parole chiave (separate da virgola)</div>
+<input class="sinp" id="nal-kw" placeholder="parola1, parola2">
+</div>
+<button onclick="addAllowance()" style="width:100%;margin-top:10px;padding:10px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);border-radius:var(--r2);color:#a5b4fc;font-size:14px;font-weight:600;cursor:pointer">＋ Aggiungi indennità</button>
+</div>`;
+document.getElementById('scont').innerHTML=`
+<div class="ssect">Le mie informazioni</div>
+<div class="scard">
+<label class="slbl">Il tuo nome</label>
+<input class="sinp" type="text" id="s-nome" value="${s.myName}">
+<div class="srow">
+<div>
+<div class="slbl" style="margin-top:8px">Data di riferimento</div>
+<input class="sinp" type="date" id="s-ref" value="${s.refDate}">
+</div>
+<div>
+<div class="slbl" style="margin-top:8px">Mio turno quel giorno</div>
+<select class="sinp" id="s-msh">${shOpts}</select>
+</div>
+</div>
+</div>
+<div class="ssect">Ciclo Corpo di Guardia</div>
+<div class="scard">
+<div class="srow">
+<div>
+<label class="slbl">Data di riferimento CG</label>
+<input class="sinp" type="date" id="s-cgd" value="${s.cgRefDate}">
+</div>
+<div>
+<label class="slbl">Fase in quella data</label>
+<select class="sinp" id="s-cgp">${cgDayOpts}</select>
+</div>
+</div>
+</div>
+<div class="ssect">Indennità – importi e parole chiave</div>
+${alHtml}
+<div class="ssect">Aggiungi nuova indennità</div>
+${newAlHtml}
+<button class="bssave" onclick="saveSet()">✓ Salva impostazioni</button>
+<div class="ssect">Backup dati</div>
+<div class="scard">
+<div class="slbl" style="margin-bottom:10px">I tuoi dati sono salvati solo su questo telefono. Esporta un backup ogni tanto per non rischiare di perdere tutto se cambi telefono o resetti il browser.</div>
+<button onclick="exportBackup()" style="width:100%;padding:12px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);border-radius:var(--r2);color:var(--grn);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">⬇️ Esporta backup</button>
+<input type="file" id="backup-file-input" accept="application/json" style="display:none" onchange="importBackup(this)">
+<button onclick="document.getElementById('backup-file-input').click()" style="width:100%;padding:12px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r2);color:var(--tx);font-size:14px;font-weight:600;cursor:pointer">⬆️ Importa backup</button>
+</div>
+<div class="ssect">Manutenzione app</div>
+<div class="scard">
+<div class="slbl" style="margin-bottom:10px">Se l'app sembra bloccata su una versione vecchia e non si aggiorna da sola, usa questo pulsante. <b>Non cancella i tuoi turni, ferie o note salvate</b> — pulisce solo la cache tecnica dell'app.</div>
+<button onclick="forceAppUpdate()" style="width:100%;padding:12px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);border-radius:var(--r2);color:var(--red);font-size:14px;font-weight:600;cursor:pointer">🔄 Forza aggiornamento app</button>
+</div>
+`;
+}
+function exportBackup(){
+const backup={
+version:1,
+exportDate:new Date().toISOString(),
+ts_cfg:localStorage.getItem('ts_cfg'),
+ts_entries:localStorage.getItem('ts_entries'),
+ts_leaves:localStorage.getItem('ts_leaves')
+};
+const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+const d=new Date();
+const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+a.href=url;
+a.download=`turni-backup-${stamp}.json`;
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importBackup(input){
+const file=input.files[0];
+if(!file) return;
+const reader=new FileReader();
+reader.onload=e=>{
+try{
+const backup=JSON.parse(e.target.result);
+if(!backup||typeof backup!=='object'||!('ts_cfg' in backup)){
+alert('File di backup non valido.');
+return;
+}
+if(!confirm('Questo SOSTITUIRÀ tutti i dati attuali (turni, ferie, note) con quelli del backup. Continuare?')) return;
+if(backup.ts_cfg) localStorage.setItem('ts_cfg',backup.ts_cfg);
+if(backup.ts_entries) localStorage.setItem('ts_entries',backup.ts_entries);
+if(backup.ts_leaves) localStorage.setItem('ts_leaves',backup.ts_leaves);
+alert('Backup importato con successo.');
+window.location.reload();
+}catch(err){
+alert('Impossibile leggere il file: '+err.message);
+}
+};
+reader.readAsText(file);
+input.value='';
+}
+function forceAppUpdate(){
+if(!confirm("Questo ricaricherà l'app scaricando l'ultima versione. I tuoi turni, ferie e note salvate NON verranno toccati. Continuare?")) return;
+const btn=event.target;
+btn.textContent='Aggiornamento in corso...';
+btn.disabled=true;
+Promise.all([
+('serviceWorker' in navigator)?navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.map(r=>r.unregister()))):Promise.resolve(),
+('caches' in window)?caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))):Promise.resolve()
+]).then(()=>{
+setTimeout(()=>{ window.location.href=window.location.href.split('?')[0]+'?nocache='+Date.now(); },300);
+}).catch(()=>{
+window.location.reload();
+});
+}
+function saveSet(){
+const s=getS();
+s.configured=true;
+s.myName=document.getElementById('s-nome').value.trim()||'Io';
+s.refDate=document.getElementById('s-ref').value||s.refDate;
+s.myShift=parseInt(document.getElementById('s-msh').value);
+s.cgRefDate=document.getElementById('s-cgd').value||s.cgRefDate;
+s.cgRefDay=parseInt(document.getElementById('s-cgp').value);
+s.allowances=s.allowances.map(a=>{
+const rate=parseFloat(document.getElementById('ar-'+a.id).value)||0;
+const kwEl=document.getElementById('ak-'+a.id);
+const keywords=kwEl?kwEl.value.split(',').map(k=>k.trim()).filter(Boolean):a.keywords;
+return{...a,rate,keywords};
+});
+saveS(s);
+const btn=document.querySelector('.bssave');
+btn.textContent='✓ Salvato!';
+setTimeout(()=>{btn.textContent='✓ Salva impostazioni';renderCal();},1500);
+}
+// ── GESTIONE INDENNITÀ ────────────────────────────────────────────────────
+function addAllowance(){
+const icon=document.getElementById('nal-icon').value.trim()||'💶';
+const name=document.getElementById('nal-name').value.trim();
+if(!name){alert('Inserisci un nome per l\'indennità');return}
+const unit=document.getElementById('nal-unit').value;
+const rate=parseFloat(document.getElementById('nal-rate').value)||0;
+const keywords=document.getElementById('nal-kw').value.split(',').map(k=>k.trim()).filter(Boolean);
+const s=getS();
+s.allowances.push({id:'custom_'+Date.now(),name,icon,trigger:'keyword',unit,rate,keywords});
+saveS(s);
+renderSet();
+}
+function deleteAllowance(id){
+if(!confirm('Eliminare questa indennità?')) return;
+const s=getS();
+s.allowances=s.allowances.filter(a=>a.id!==id);
+saveS(s);
+renderSet();
+}
+// ── MODAL UTILS ───────────────────────────────────────────────────────────
+function closeOv(id){document.getElementById(id).classList.remove('on')}
+function ovOut(e,id){if(e.target===document.getElementById(id)) closeOv(id)}
+// ── INIT ──────────────────────────────────────────────────────────────────
+document.getElementById('fab-dir').style.display='none';
+renderCal();
+setupSelection();
+setupSwipe();
+let swReg=null;
+function showUpdateBanner(){
+document.getElementById('update-banner').style.display='block';
+}
+function applyUpdate(){
+if(swReg&&swReg.waiting){
+swReg.waiting.postMessage('SKIP_WAITING');
+}
+}
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('./sw.js?v=17').then(reg=>{
+swReg=reg;
+if(reg.waiting&&navigator.serviceWorker.controller) showUpdateBanner();
+reg.addEventListener('updatefound',()=>{
+const nw=reg.installing;
+if(!nw) return;
+nw.addEventListener('statechange',()=>{
+if(nw.state==='installed'&&navigator.serviceWorker.controller){
+showUpdateBanner();
+}
+});
+});
+}).catch(()=>{});
+let refreshing=false;
+navigator.serviceWorker.addEventListener('controllerchange',()=>{
+if(refreshing) return;
+refreshing=true;
+window.location.reload();
+});
+}
+</script>
+</body>
+</html>
