@@ -79,6 +79,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .jhint{font-size:11px;color:var(--tx2);margin-top:5px;line-height:1.4}
 .aprev{margin-top:11px}
 .achips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.achip{border-radius:18px;padding:4px 9px;font-size:11px;display:flex;align-items:center;gap:4px}
 .achip.auto{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:var(--grn)}
 .achip.kw{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc}
 .achip.none{background:var(--sf2);border:1px solid var(--bd);color:var(--tx2);font-style:italic}
@@ -306,15 +307,13 @@ oninput="previewA()"></textarea>
 'use strict';
 // ── ACCESSO (Firebase) ──────────────────────────────────────────────────
 const firebaseConfig = {
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCxL3l2lw20NDVjdsGA_r03Ll2qH9Q_FNE",
-  authDomain: "turni-67af1.firebaseapp.com",
-  projectId: "turni-67af1",
-  storageBucket: "turni-67af1.firebasestorage.app",
-  messagingSenderId: "608096635538",
-  appId: "1:608096635538:web:8dc0318c228b81211e744b",
-  measurementId: "G-D99E2GRKQ4"
+apiKey: "AIzaSyCxL3l2lw20NDVjdsGA_r03Ll2qH9Q_FNE",
+authDomain: "turni-67af1.firebaseapp.com",
+projectId: "turni-67af1",
+storageBucket: "turni-67af1.firebasestorage.app",
+messagingSenderId: "608096635538",
+appId: "1:608096635538:web:8dc0318c228b81211e744b",
+measurementId: "G-D99E2GRKQ4"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -1511,7 +1510,7 @@ document.getElementById('update-banner').style.display='block';
 }
 function applyUpdate(){
 if(swReg&&swReg.waiting){
-swReg.waitinfg.postMessage('SKIP_WAITING');
+swReg.waiting.postMessage('SKIP_WAITING');
 }
 }
 if('serviceWorker' in navigator){
