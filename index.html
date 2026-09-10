@@ -79,7 +79,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .jhint{font-size:11px;color:var(--tx2);margin-top:5px;line-height:1.4}
 .aprev{margin-top:11px}
 .achips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
-.achip{border-radius:18px;padding:4px 9px;font-size:11px;display:flex;align-items:center;gap:4px}
 .achip.auto{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:var(--grn)}
 .achip.kw{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc}
 .achip.none{background:var(--sf2);border:1px solid var(--bd);color:var(--tx2);font-style:italic}
@@ -301,8 +300,68 @@ oninput="previewA()"></textarea>
 <div id="ad-list"></div>
 </div>
 </div>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 'use strict';
+// ── ACCESSO (Firebase) ──────────────────────────────────────────────────
+const firebaseConfig = {
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCxL3l2lw20NDVjdsGA_r03Ll2qH9Q_FNE",
+  authDomain: "turni-67af1.firebaseapp.com",
+  projectId: "turni-67af1",
+  storageBucket: "turni-67af1.firebasestorage.app",
+  messagingSenderId: "608096635538",
+  appId: "1:608096635538:web:8dc0318c228b81211e744b",
+  measurementId: "G-D99E2GRKQ4"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+function getOrCreateDeviceId(){
+let id=localStorage.getItem('deviceId');
+if(!id){id=crypto.randomUUID();localStorage.setItem('deviceId',id);}
+return id;
+}
+async function verificaCodice(codice){
+const deviceId=getOrCreateDeviceId();
+const docRef=db.collection('codes').doc(codice.trim().toUpperCase());
+return db.runTransaction(async(t)=>{
+const doc=await t.get(docRef);
+if(!doc.exists) throw new Error('Codice non valido.');
+const data=doc.data();
+if(data.used){
+if(data.deviceId===deviceId) return 'ok';
+throw new Error('Codice già utilizzato su un altro dispositivo.');
+}
+t.update(docRef,{used:true,deviceId:deviceId});
+return 'ok';
+});
+}
+function mostraSchermataAccesso(){
+const ov=document.createElement('div');
+ov.id='lock-overlay';
+ov.style.cssText='position:fixed;inset:0;z-index:9999;background:#0d0d12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
+ov.innerHTML=`
+<div style="font-size:20px;font-weight:700;color:#eeeef5;">🔒 Accesso richiesto</div>
+<input id="lock-input" placeholder="Codice di accesso" style="padding:12px 14px;font-size:16px;text-transform:uppercase;border-radius:9px;border:1px solid #2a2a3a;background:#171720;color:#eeeef5;width:100%;max-width:280px;text-align:center;" />
+<button id="lock-btn" style="padding:12px 24px;font-size:15px;font-weight:600;border-radius:9px;border:none;background:#6366f1;color:#fff;cursor:pointer;width:100%;max-width:280px;">Conferma</button>
+<div id="lock-err" style="color:#f87171;font-size:13px;min-height:18px;"></div>
+`;
+document.body.appendChild(ov);
+document.getElementById('lock-btn').onclick=async()=>{
+const codice=document.getElementById('lock-input').value;
+const errEl=document.getElementById('lock-err');
+errEl.textContent='';
+try{
+await verificaCodice(codice);
+localStorage.setItem('appUnlocked','true');
+location.reload();
+}catch(e){
+errEl.textContent=e.message;
+}
+};
+}
 // ── COSTANTI ─────────────────────────────────────────────────────────────
 const SH = ['S','P','M','N','R'];
 const SHNAME = {S:'Sera',P:'Pomeriggio',M:'Mattina',N:'Notte',R:'Riposo'};
@@ -946,7 +1005,7 @@ const autoLines=[];
 if(!lv&&!isAltro){
 s.allowances.forEach(a=>{
 if(a.trigger==='keyword') return;
-if(entryAllow.some(x=>x.id===a.id)) return; // gia' gestita esplicitamente (vedi manualLines)
+if(entryAllow.some(x=>x.id===a.id)) return;
 if(opApplies && a.suppressedByOp) return;
 if(computeAutoHit(a,dateS,sh,false)) autoLines.push(a);
 });
@@ -1037,7 +1096,6 @@ function removeLeaveDay(date){
 applyLeave([date],null);
 renderFerie();
 }
-// applica (o rimuove, se typeId è null/falsy) un tipo di ferie a un elenco di date
 function applyLeave(dates,typeId){
 const leaves=getLeaves();
 dates.forEach(d=>{
@@ -1064,8 +1122,8 @@ render(curPage);
 if(document.getElementById('pg-fer').classList.contains('on')) renderFerie();
 }
 // ── SELEZIONE MULTIPLA (tieni premuto + trascina) ─────────────────────────
-let gest=null; // stato del gesto in corso: {startX,startY,longPress,timer,date}
-let suppressClick=false; // vero se il click nativo che segue va ignorato (dopo tieni-premuto o trascinamento)
+let gest=null;
+let suppressClick=false;
 let selDates=new Set();
 function clearSelectionVisual(){
 document.querySelectorAll('#cgrid .cc.sel').forEach(c=>c.classList.remove('sel'));
@@ -1206,16 +1264,13 @@ if(gest) clearTimeout(gest.timer);
 gest=null;
 document.getElementById('cgrid').classList.remove('selecting');
 });
-// Il tap per aprire il giorno usa il click nativo del browser: e' l'unico
-// meccanismo che distingue in modo affidabile su ogni dispositivo un tocco
-// da un trascinamento, senza bisogno di soglie di movimento fatte a mano.
 grid.addEventListener('click',e=>{
 if(suppressClick){suppressClick=false;return;}
 const cell=e.target.closest('.cc:not(.empty)');
 if(cell) openDay(cell.dataset.date);
 });
 }
-// ── SWIPE CAMBIO MESE (solo fuori dalle celle, per non interferire col tap) ─
+// ── SWIPE CAMBIO MESE ─────────────────────────────────────────────────────
 function setupSwipe(){
 let sx=null,sy=null,onGridCell=false;
 document.addEventListener('pointerdown',e=>{
@@ -1442,17 +1497,21 @@ renderSet();
 function closeOv(id){document.getElementById(id).classList.remove('on')}
 function ovOut(e,id){if(e.target===document.getElementById(id)) closeOv(id)}
 // ── INIT ──────────────────────────────────────────────────────────────────
+if(localStorage.getItem('appUnlocked')==='true'){
 document.getElementById('fab-dir').style.display='none';
 renderCal();
 setupSelection();
 setupSwipe();
+}else{
+mostraSchermataAccesso();
+}
 let swReg=null;
 function showUpdateBanner(){
 document.getElementById('update-banner').style.display='block';
 }
 function applyUpdate(){
 if(swReg&&swReg.waiting){
-swReg.waiting.postMessage('SKIP_WAITING');
+swReg.waitinfg.postMessage('SKIP_WAITING');
 }
 }
 if('serviceWorker' in navigator){
