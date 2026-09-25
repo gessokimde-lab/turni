@@ -369,7 +369,7 @@ const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
 const GIORNI = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
 const GDLONG = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
 const WDLBLS = ['L','M','M','G','V','S','D'];
-const LVCOLORS = {ordinario:'#4ade80',recuperi:'#60a5fa',legge937:'#fbbf24',straord_cong:'#f87171'};
+const LVCOLORS = {ordinario:'#4ade80',recuperi:'#4ade80',legge937:'#4ade80',straord_cong:'#4ade80'};
 const DEF = {
 configured: false,
 myName: 'Io',
@@ -582,9 +582,15 @@ inner=`<div class="cnum">${d}</div><div class="leaveiconcell">🔧</div>`;
 }else{
 inner=`<div class="cnum">${d}</div>${myShift?`<div class="cmsh">${myShift}</div>`:''}`;
 // Giovedì pomeriggio durante la settimana al Corpo di Guardia → casella rossa
-const isZC=zonaChiusaOn(dateS);
-if(isZC||(cg==='CG'&&myShift==='P'&&dp(dateS).getDay()===4)){
-styleAttr=`style="border-color:var(--red);background:rgba(248,113,113,.28)"`;
+// Zona chiusa 06:30→06:30: il giorno di inizio, più la Notte (00-07) del giorno dopo che ricade ancora nella zona chiusa
+const prev=dp(dateS);prev.setDate(prev.getDate()-1);
+const prevS=ds(prev.getFullYear(),prev.getMonth()+1,prev.getDate());
+const isZC=zonaChiusaOn(dateS)||(myShift==='N'&&zonaChiusaOn(prevS));
+const isGiovPCdg=cg==='CG'&&myShift==='P'&&dp(dateS).getDay()===4;
+if(isGiovPCdg){
+styleAttr=`style="border-color:rgba(251,146,60,.8);background:rgba(251,146,60,.12)"`;
+}else if(isZC){
+styleAttr=`style="border-color:rgba(248,113,113,.75);background:rgba(248,113,113,.10)"`;
 }
 }
 html+=`<div class="${cls}" data-date="${dateS}" ${styleAttr}>${cgBadge}${inner}</div>`;
@@ -595,7 +601,8 @@ const legHtml=SH.map(sh=>
 ).join('')+`<div class="legit"><b>CDG</b> – Corpo di Guardia</div>`+
 s.leaveTypes.map(lt=>`<div class="legit"><span class="legdot" style="background:${LVCOLORS[lt.id]||'#a5b4fc'}"></span>${lt.icon} ${lt.name}</div>`).join('')+
 `<div class="legit"><span class="legdot" style="background:#a78bfa"></span>🔧 Altro servizio</div>`+
-`<div class="legit"><span class="legdot" style="background:var(--red)"></span>Giovedì P al CDG / Zona chiusa</div>`;
+`<div class="legit"><span class="legdot" style="background:rgba(248,113,113,.5)"></span>Zona chiusa</div>`+
+`<div class="legit"><span class="legdot" style="background:rgba(251,146,60,.8)"></span>Giovedì P al CDG</div>`;
 document.getElementById('leg').innerHTML=legHtml;
 }
 // ── MODAL GIORNO ──────────────────────────────────────────────────────────

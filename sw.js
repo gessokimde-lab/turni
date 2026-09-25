@@ -1,4 +1,4 @@
-const CACHE_NAME = 'turni-cache-v19';
+const CACHE_NAME = 'turni-cache-v22';
 const ASSETS = [
   './',
   './index.html',
