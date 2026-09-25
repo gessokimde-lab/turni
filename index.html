@@ -585,7 +585,10 @@ inner=`<div class="cnum">${d}</div>${myShift?`<div class="cmsh">${myShift}</div>
 // Zona chiusa 06:30→06:30: il giorno di inizio, più la Notte (00-07) del giorno dopo che ricade ancora nella zona chiusa
 const prev=dp(dateS);prev.setDate(prev.getDate()-1);
 const prevS=ds(prev.getFullYear(),prev.getMonth()+1,prev.getDate());
-const isZC=zonaChiusaOn(dateS)||(myShift==='N'&&zonaChiusaOn(prevS));
+// Colora solo se il turno ricade prevalentemente in zona chiusa:
+// giorno di inizio → S, P, M (la Notte 00-07 è coperta solo 30 min, il Riposo non è servizio)
+// giorno dopo → solo la Notte (00-07, chiusa fino alle 06:30)
+const isZC=(zonaChiusaOn(dateS)&&['S','P','M'].includes(myShift))||(myShift==='N'&&zonaChiusaOn(prevS));
 const isGiovPCdg=cg==='CG'&&myShift==='P'&&dp(dateS).getDay()===4;
 if(isGiovPCdg){
 styleAttr=`style="border-color:rgba(251,146,60,.8);background:rgba(251,146,60,.12)"`;
