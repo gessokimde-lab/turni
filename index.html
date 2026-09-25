@@ -427,6 +427,9 @@ function altroOn(date){const e=getEntry(date);return !!(e&&e.altro)}
 // ── DATE UTILS ────────────────────────────────────────────────────────────
 function todayStr(){return new Date().toISOString().split('T')[0]}
 function dp(s){return new Date(s+'T12:00:00')}
+// Zona chiusa: ogni 3 giorni, dalle 06:30 del giorno indicato alle 06:30 del successivo. Riferimento: 24/09/2026
+const ZC_ANCHOR=Date.UTC(2026,8,24);
+function zonaChiusaOn(s){const [y,m,d]=s.split('-').map(Number);const diff=Math.round((Date.UTC(y,m-1,d)-ZC_ANCHOR)/86400000);return ((diff%3)+3)%3===0}
 function ddiff(a,b){return Math.round((dp(b)-dp(a))/86400000)}
 function ds(y,m,d){return`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
 function monthKey(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
@@ -578,6 +581,11 @@ styleAttr=`style="border-color:#a78bfa;background:#a78bfa22"`;
 inner=`<div class="cnum">${d}</div><div class="leaveiconcell">🔧</div>`;
 }else{
 inner=`<div class="cnum">${d}</div>${myShift?`<div class="cmsh">${myShift}</div>`:''}`;
+// Giovedì pomeriggio durante la settimana al Corpo di Guardia → casella rossa
+const isZC=zonaChiusaOn(dateS);
+if(isZC||(cg==='CG'&&myShift==='P'&&dp(dateS).getDay()===4)){
+styleAttr=`style="border-color:var(--red);background:rgba(248,113,113,.28)"`;
+}
 }
 html+=`<div class="${cls}" data-date="${dateS}" ${styleAttr}>${cgBadge}${inner}</div>`;
 }
@@ -586,7 +594,8 @@ const legHtml=SH.map(sh=>
 `<div class="legit"><b>${sh}</b> – ${SHNAME[sh]}</div>`
 ).join('')+`<div class="legit"><b>CDG</b> – Corpo di Guardia</div>`+
 s.leaveTypes.map(lt=>`<div class="legit"><span class="legdot" style="background:${LVCOLORS[lt.id]||'#a5b4fc'}"></span>${lt.icon} ${lt.name}</div>`).join('')+
-`<div class="legit"><span class="legdot" style="background:#a78bfa"></span>🔧 Altro servizio</div>`;
+`<div class="legit"><span class="legdot" style="background:#a78bfa"></span>🔧 Altro servizio</div>`+
+`<div class="legit"><span class="legdot" style="background:var(--red)"></span>Giovedì P al CDG / Zona chiusa</div>`;
 document.getElementById('leg').innerHTML=legHtml;
 }
 // ── MODAL GIORNO ──────────────────────────────────────────────────────────
